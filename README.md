@@ -130,12 +130,12 @@ jobs:
   floorcheck:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
       - name: Scan
         run: npx -y github:Pryzmastudio/floorcheck https://staging.example.com --fail-on serious
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: floorcheck-report
