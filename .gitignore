@@ -1,0 +1,4 @@
+node_modules/
+floorcheck-report/
+*.tgz
+.DS_Store

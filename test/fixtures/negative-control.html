@@ -1,0 +1,80 @@
+<!--
+  Negative control for floorcheck.
+
+  Every problem on this page is planted on purpose. If axe injection ever
+  breaks, real sites would all come back "clean" with no other sign of
+  trouble; this page makes that failure loud. `floorcheck --self-test` scans it
+  and compares the rule ids it sees with test/fixtures/expected.json.
+
+  expected.json is generated from a real run, not written by hand. After an
+  axe-core upgrade, review the diff and regenerate it with
+      node bin/floorcheck.mjs --self-test --update-expected
+
+  <html> has no lang attribute on purpose (html-has-lang).
+-->
+<html>
+<head>
+  <meta charset="utf-8">
+  <!-- planted: meta-viewport (1.4.4), zoom is blocked -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <title>floorcheck negative control</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #fff; color: #111; margin: 0; padding: 16px; }
+    .low-contrast { color: #999999; background: #ffffff; }
+    .wide-block { width: 1200px; height: 40px; background: #eee; }
+    .tiny { width: 16px; height: 16px; padding: 0; border: 0; background: #036; color: #fff; font-size: 9px; }
+    .no-focus-style { outline: none; }
+    .no-focus-style:focus { outline: none; box-shadow: none; border: none; text-decoration: underline; }
+    .spinner { width: 24px; height: 24px; background: #036; animation: spin 1s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <h1>Negative control</h1>
+
+  <!-- planted: image-alt (1.1.1), no alt attribute -->
+  <img width="40" height="40"
+       src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect width='40' height='40' fill='%23036'/%3E%3C/svg%3E">
+
+  <!-- planted: label (4.1.2 / 1.3.1), input with no label -->
+  <p><input type="text" name="unlabelled"></p>
+
+  <!-- planted: color-contrast (1.4.3), #999 on #fff is 2.85:1 -->
+  <p class="low-contrast">This paragraph fails the minimum contrast ratio.</p>
+
+  <!-- planted: button-name (4.1.2), no accessible name -->
+  <p><button style="width:32px;height:32px"></button></p>
+
+  <!-- planted: link-name (2.4.4), empty link. 32px so target-size does not fire here too. -->
+  <p><a href="https://example.com" style="display:inline-block;width:32px;height:32px;background:#ddd"></a></p>
+
+  <!-- planted: duplicate-id-aria (4.1.2), the referenced id appears twice -->
+  <p><span id="dup-label">Shipping address</span></p>
+  <p><span id="dup-label">Billing address</span></p>
+  <p><input type="text" aria-labelledby="dup-label"></p>
+
+  <!-- planted: aria-valid-attr-value (4.1.2), aria-labelledby points at a missing id.
+       The button keeps its text, so button-name still passes here. -->
+  <p><button aria-labelledby="no-such-id">Save</button></p>
+
+  <!-- planted: target-size (2.5.8), two adjacent 16x16 targets -->
+  <p><button class="tiny">1</button><button class="tiny">2</button></p>
+
+  <!-- planted for floorcheck: reflow (1.4.10), a 1200px block at 320px wide -->
+  <div class="wide-block">Fixed 1200px wide block</div>
+
+  <!-- planted for floorcheck: focus visible (2.4.7), focus removes the outline and
+       only adds an underline to a link that is already underlined -->
+  <p><a class="no-focus-style" href="https://example.com">Link with suppressed focus ring</a></p>
+
+  <!-- planted for floorcheck: focus order (2.4.3), positive tabindex -->
+  <p><button tabindex="5">Positive tabindex</button></p>
+
+  <!-- planted for floorcheck: looping motion (2.2.2), infinite animation and no
+       prefers-reduced-motion rule anywhere -->
+  <div class="spinner"></div>
+
+  <!-- planted for floorcheck: overlay detection. Only the attribute, no script is loaded. -->
+  <div data-acsb-placeholder="true" hidden></div>
+</body>
+</html>

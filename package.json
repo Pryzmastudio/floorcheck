@@ -1,0 +1,57 @@
+{
+  "name": "floorcheck",
+  "version": "1.0.0",
+  "description": "WCAG 2.2 scanner built on axe-core that keeps conformance failures, needs-review items and advice apart, checks reflow at 320px, and refuses to call an error or bot-challenge page clean.",
+  "type": "module",
+  "bin": {
+    "floorcheck": "bin/floorcheck.mjs"
+  },
+  "exports": {
+    ".": "./src/index.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "test/fixtures",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test test/unit.test.mjs test/integration.test.mjs",
+    "self-test": "node bin/floorcheck.mjs --self-test",
+    "test:unit": "node --test test/unit.test.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "axe-core": "4.14.0",
+    "playwright-core": "1.64.0"
+  },
+  "keywords": [
+    "accessibility",
+    "a11y",
+    "wcag",
+    "wcag22",
+    "axe-core",
+    "playwright",
+    "audit",
+    "cli",
+    "en-301-549",
+    "european-accessibility-act"
+  ],
+  "author": {
+    "name": "Vayle (Nikita Roskladka)",
+    "email": "hello@vayle.art",
+    "url": "https://vayle.art"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Pryzmastudio/floorcheck.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Pryzmastudio/floorcheck/issues"
+  },
+  "homepage": "https://github.com/Pryzmastudio/floorcheck#readme"
+}

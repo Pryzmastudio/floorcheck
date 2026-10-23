@@ -1,0 +1,156 @@
+{
+  "_about": "Signatures for accessibility overlays and toolbars. Case-insensitive substrings matched against the rendered HTML and the URLs of loaded resources. 'strong' means the widget is installed (loader host, injected attribute). 'weak' can also be a plain link or mention, so it is reported as 'mentioned'. Kind 'overlay' is a third-party script that rewrites the page; 'toolbar' is a self-hosted plugin with text size and contrast buttons.",
+  "vendors": [
+    {
+      "name": "accessiBe",
+      "kind": "overlay",
+      "strong": [
+        "acsbapp.com",
+        "acsbap.com",
+        "acsb.app",
+        "data-acsb"
+      ],
+      "weak": [
+        "accessibe.com"
+      ]
+    },
+    {
+      "name": "UserWay",
+      "kind": "overlay",
+      "strong": [
+        "cdn.userway.org",
+        "userwayWidgetApp",
+        "data-uw-"
+      ],
+      "weak": [
+        "userway.org"
+      ]
+    },
+    {
+      "name": "AudioEye",
+      "kind": "overlay",
+      "strong": [
+        "wsmcdn.audioeye.com",
+        "__AudioEyeSiteHash"
+      ],
+      "weak": [
+        "audioeye.com"
+      ]
+    },
+    {
+      "name": "EqualWeb",
+      "kind": "overlay",
+      "strong": [
+        "equalweb.com",
+        "nagich.com"
+      ],
+      "weak": []
+    },
+    {
+      "name": "All-in-One Accessibility (Skynet)",
+      "kind": "overlay",
+      "strong": [
+        "aioa-widget",
+        "ada.skynettechnologies"
+      ],
+      "weak": [
+        "skynettechnologies.com"
+      ]
+    },
+    {
+      "name": "Recite Me",
+      "kind": "overlay",
+      "strong": [
+        "cdn.reciteme.com"
+      ],
+      "weak": [
+        "reciteme.com"
+      ]
+    },
+    {
+      "name": "FACIL'iti",
+      "kind": "overlay",
+      "strong": [
+        "faciliti.com",
+        "facil-iti"
+      ],
+      "weak": []
+    },
+    {
+      "name": "Max Access",
+      "kind": "overlay",
+      "strong": [
+        "maxaccess.io"
+      ],
+      "weak": [
+        "max-access"
+      ]
+    },
+    {
+      "name": "Allyable",
+      "kind": "overlay",
+      "strong": [
+        "allyable.com"
+      ],
+      "weak": []
+    },
+    {
+      "name": "AccessiWay",
+      "kind": "overlay",
+      "strong": [
+        "accessiway.com"
+      ],
+      "weak": []
+    },
+    {
+      "name": "TruAbilities",
+      "kind": "overlay",
+      "strong": [
+        "truabilities.com"
+      ],
+      "weak": []
+    },
+    {
+      "name": "eSSENTIAL Accessibility / Level Access",
+      "kind": "overlay",
+      "strong": [],
+      "weak": [
+        "essentialaccessibility.com"
+      ]
+    },
+    {
+      "name": "Adally",
+      "kind": "overlay",
+      "strong": [
+        "adally.com"
+      ],
+      "weak": []
+    },
+    {
+      "name": "One Click Accessibility / Ally (WordPress)",
+      "kind": "toolbar",
+      "strong": [
+        "plugins/pojo-accessibility",
+        "pojo-a11y-toolbar",
+        "ea11y-widget"
+      ],
+      "weak": []
+    },
+    {
+      "name": "WP Accessibility (WordPress)",
+      "kind": "toolbar",
+      "strong": [
+        "plugins/wp-accessibility/"
+      ],
+      "weak": []
+    },
+    {
+      "name": "WP Accessibility Helper (WordPress)",
+      "kind": "toolbar",
+      "strong": [
+        "wp-accessibility-helper"
+      ],
+      "weak": []
+    }
+  ]
+}
