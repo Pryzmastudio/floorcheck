@@ -5,7 +5,7 @@ A WCAG 2.2 accessibility scanner for the command line, built on [axe-core](https
 The name comes from the rule it's built around: an automated scan is the floor, not the audit. floorcheck tries to be honest about that. It keeps real failures, things a person has to check, and general advice in separate piles. It adds the checks axe doesn't have, like sideways scrolling at 320px. And it won't tell you a page is clean when it never actually saw the page.
 
 ```
-$ npx github:Pryzmastudio/floorcheck https://www.w3.org/WAI/demos/bad/before/home.html https://www.w3.org/WAI/demos/bad/after/home.html
+$ npx floorcheck https://www.w3.org/WAI/demos/bad/before/home.html https://www.w3.org/WAI/demos/bad/after/home.html
 
 scanning 2 pages (quick mode)
   x  https://www.w3.org/WAI/demos/bad/after/home.html
@@ -48,13 +48,13 @@ You need Node.js 20 or newer and Google Chrome or Microsoft Edge. No browser dow
 Run it without installing:
 
 ```sh
-npx github:Pryzmastudio/floorcheck https://example.com
+npx floorcheck https://example.com
 ```
 
 Or add it to a project:
 
 ```sh
-npm install --save-dev github:Pryzmastudio/floorcheck
+npm install --save-dev floorcheck
 npx floorcheck https://example.com
 ```
 
@@ -134,7 +134,7 @@ jobs:
         with:
           node-version: 24
       - name: Scan
-        run: npx -y github:Pryzmastudio/floorcheck https://staging.example.com --fail-on serious
+        run: npx -y floorcheck https://staging.example.com --fail-on serious
       - uses: actions/upload-artifact@v7
         if: always()
         with:

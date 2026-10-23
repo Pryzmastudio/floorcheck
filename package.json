@@ -1,6 +1,6 @@
 {
   "name": "floorcheck",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "WCAG 2.2 scanner built on axe-core that keeps conformance failures, needs-review items and advice apart, checks reflow at 320px, and refuses to call an error or bot-challenge page clean.",
   "type": "module",
   "bin": {
@@ -41,10 +41,17 @@
     "european-accessibility-act"
   ],
   "author": {
-    "name": "Vayle (Nikita Roskladka)",
+    "name": "Vayle",
     "email": "hello@vayle.art",
     "url": "https://vayle.art"
   },
+  "contributors": [
+    {
+      "name": "Nikita Roskladka",
+      "email": "hello@vayle.art",
+      "url": "https://vayle.art"
+    }
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",

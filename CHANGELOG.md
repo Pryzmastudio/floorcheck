@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1
+
+- Fix the author field in the npm metadata
+- Install instructions use the npm package
+
 ## 1.0.0
 
 First public release.
