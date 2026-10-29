@@ -31,35 +31,44 @@ const MAINTENANCE = [
   /wartungsarbeiten/i,
 ];
 
-const CHALLENGE_MARKUP = ['#challenge-form', '#cf-challenge-running', '.cf-turnstile', '#px-captcha', 'iframe[src*="captcha"]'];
+// Markup that only a full-page challenge has.
+const CHALLENGE_MARKUP = ['#challenge-form', '#cf-challenge-running'];
+// CAPTCHA widgets. Ordinary pages carry them too (reCAPTCHA in a contact form,
+// Turnstile on a newsletter signup), so they only count on a page with little else.
+const CAPTCHA_WIDGETS = ['.cf-turnstile', '#px-captcha', 'iframe[src*="captcha"]'];
 
 /** Collects what classifyPage needs. Runs in the page. */
 export async function collectPageFacts(page) {
-  return page.evaluate((challengeSelectors) => {
+  return page.evaluate(({ challenge, widgets }) => {
     const text = (document.body?.innerText || '').replace(/\s+/g, ' ').trim();
     const h1 = document.querySelector('h1');
+    const has = (selectors) => selectors.some((s) => {
+      try { return !!document.querySelector(s); } catch { return false; }
+    });
     return {
       title: document.title || '',
       h1: h1 ? h1.innerText.trim().slice(0, 200) : '',
       textLength: text.length,
       linkCount: document.links.length,
-      challengeMarkup: challengeSelectors.some((s) => {
-        try { return !!document.querySelector(s); } catch { return false; }
-      }),
+      challengeMarkup: has(challenge),
+      captchaWidget: has(widgets),
     };
-  }, CHALLENGE_MARKUP);
+  }, { challenge: CHALLENGE_MARKUP, widgets: CAPTCHA_WIDGETS });
 }
 
 /**
  * Decide whether a loaded page is the real page.
  * Returns null when it is, or a short human reason when it is not.
  */
-export function classifyPage({ status, title = '', h1 = '', textLength = 0, linkCount = 0, challengeMarkup = false }) {
+export function classifyPage({
+  status, title = '', h1 = '', textLength = 0, linkCount = 0, challengeMarkup = false, captchaWidget = false,
+}) {
   if (typeof status === 'number' && status >= 400) {
     return `HTTP ${status}: the server returned an error page, not the page itself`;
   }
   const heading = `${title} ${h1}`.trim();
-  if (challengeMarkup || CHALLENGE.some((re) => re.test(title) || re.test(h1))) {
+  const thinPage = textLength < 1500 && linkCount < 10;
+  if (challengeMarkup || (captchaWidget && thinPage) || CHALLENGE.some((re) => re.test(title) || re.test(h1))) {
     return `bot protection or access block ("${heading.slice(0, 60)}")`;
   }
   // A real page can mention maintenance in passing, so the notice has to be in

@@ -63,6 +63,12 @@ test('classifyPage rejects error, challenge, maintenance and empty pages', () =>
   assert.match(classifyPage({ ...real, textLength: 0, linkCount: 0 }), /almost empty/);
 });
 
+test('classifyPage only treats a CAPTCHA widget as a challenge on a page with little else', () => {
+  const contactPage = { status: 200, title: 'Uniwersytet', h1: 'Studia', textLength: 6000, linkCount: 150, captchaWidget: true };
+  assert.equal(classifyPage(contactPage), null);
+  assert.match(classifyPage({ ...contactPage, textLength: 120, linkCount: 1 }), /bot protection/);
+});
+
 test('classifyPage does not reject real businesses with "maintenance" in the name', () => {
   assert.equal(classifyPage({ status: 200, title: 'Green Lawn Maintenance Ltd', h1: 'Lawn care in Leeds', textLength: 900, linkCount: 12 }), null);
   assert.equal(classifyPage({ status: 200, title: 'Scheduled maintenance plans', h1: 'Our plans', textLength: 5000, linkCount: 60 }), null);

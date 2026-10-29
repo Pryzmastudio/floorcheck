@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.1
+
+- A reCAPTCHA, Turnstile or similar widget no longer marks an ordinary page as a bot challenge. These widgets often sit in contact and signup forms, so they now count only on a page with little text and almost no links. Full-page challenge markup still counts on its own
+
 ## 1.2.0
 
 - Reflow: overflow caused only by code, tables, canvas or drawings now goes to needs-review (WCAG 1.4.10 allows two-dimensional scrolling when the layout is essential) instead of failing

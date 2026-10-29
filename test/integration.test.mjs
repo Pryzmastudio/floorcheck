@@ -49,6 +49,10 @@ before(async () => {
         return send(200, page('Code', `<h1>Code</h1>${filler}<pre>const aVeryLongLineOfCodeThatCannotWrap = someFunction(withArguments, andMoreArguments, andEvenMore);</pre>`));
       case '/reflow-box':
         return send(200, page('Box', `<h1>Box</h1>${filler}<div style="overflow-x:auto"><p style="min-width:600px">This paragraph only fits if you scroll sideways inside the box.</p></div>`));
+      case '/captcha-form':
+        return send(200, page('Contact', `<h1>Contact</h1>${filler}${Array.from({ length: 12 }, (_, i) => `<a href="/p${i}">Page ${i}</a>`).join(' ')}`
+          + '<form><label>Email <input type="email"></label><iframe title="reCAPTCHA" src="data:text/html,recaptcha"></iframe>'
+          + '<div class="cf-turnstile"></div><button>Send</button></form>'));
       case '/forbidden':
         return send(403, page('403 Forbidden', '<h1>Forbidden</h1>'));
       case '/challenge':
@@ -94,6 +98,11 @@ test('error, challenge, maintenance and empty pages are not reported as scanned'
   assert.match(report.results[1].error, /bot protection/);
   assert.match(report.results[2].error, /maintenance/);
   assert.match(report.results[3].error, /almost empty/);
+});
+
+test('a real page with a CAPTCHA widget in a form is scanned', async () => {
+  const report = await scan([`${base}/captcha-form`], {});
+  assert.equal(report.results[0].ok, true, report.results[0].error);
 });
 
 test('--allow-error-pages scans them anyway', async () => {
