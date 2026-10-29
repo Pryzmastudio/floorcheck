@@ -204,6 +204,16 @@ console.log(s.conformance, 'failures,', s.review, 'to review,', s.notScanned, 'n
 
 `scan` takes the same options as the CLI in camelCase (`waitFor`, `allowErrorPages`, `failOn` and so on), plus an `onPage(result, index, total)` callback for progress.
 
+## ACT Rules
+
+floorcheck can be checked against the W3C [ACT Rules](https://www.w3.org/WAI/standards-guidelines/act/) test cases, the shared test suite accessibility tools use to show how their results line up with WCAG:
+
+```sh
+npm run act-report
+```
+
+This runs every ACT test case that floorcheck has a check for and writes an EARL report to `act/floorcheck-earl.json`. It covers the axe-core rules that axe maps to ACT rules, plus floorcheck's own focus check (ACT rule [oj04fd](https://www.w3.org/WAI/standards-guidelines/act/rules/oj04fd/)). The focus check only compares the element's own style, so it reports "can't tell" rather than a failure, which makes it partially consistent by design.
+
 ## What it can't do
 
 No automated tool can tell you a site is accessible. axe-core 4.14 has rules for 23 of the 55 WCAG 2.2 A/AA success criteria, and even inside those it can't judge whether alt text is any good, whether headings make sense, or whether a form can be finished with a keyboard. A page with zero failures here still needs someone to go through it with a keyboard and a screen reader. The W3C's [Easy Checks](https://www.w3.org/WAI/test-evaluate/easy-checks/) are a good place to start.

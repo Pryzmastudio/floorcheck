@@ -191,8 +191,10 @@
 
   function checkFocusVisible(limit) {
     var sel = 'a[href], button, input, select, textarea, summary, [tabindex]:not([tabindex="-1"])';
+    // tabIndex < 0 takes an element out of the Tab sequence (a link with
+    // tabindex="-1" still matches a[href]), so focus visibility does not apply.
     var els = Array.prototype.slice.call(document.querySelectorAll(sel)).filter(function (el) {
-      return !el.disabled && !isExcluded(el) && isVisible(el, getComputedStyle(el));
+      return !el.disabled && el.tabIndex >= 0 && !isExcluded(el) && isVisible(el, getComputedStyle(el));
     }).slice(0, limit || 40);
 
     var active = document.activeElement;

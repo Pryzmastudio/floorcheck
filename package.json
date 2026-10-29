@@ -1,6 +1,6 @@
 {
   "name": "floorcheck",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "WCAG 2.2 scanner built on axe-core that keeps conformance failures, needs-review items and advice apart, checks reflow at 320px, and refuses to call an error or bot-challenge page clean.",
   "type": "module",
   "bin": {
@@ -19,7 +19,8 @@
   "scripts": {
     "test": "node --test test/unit.test.mjs test/integration.test.mjs",
     "self-test": "node bin/floorcheck.mjs --self-test",
-    "test:unit": "node --test test/unit.test.mjs"
+    "test:unit": "node --test test/unit.test.mjs",
+    "act-report": "node scripts/act-report.mjs"
   },
   "engines": {
     "node": ">=20"

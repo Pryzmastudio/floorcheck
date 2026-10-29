@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.0
+
+- `npm run act-report`: runs the W3C ACT Rules test cases and writes an EARL report (`act/floorcheck-earl.json`)
+- Focus check skips elements taken out of the Tab order with a negative tabindex
+
 ## 1.0.1
 
 - Fix the author field in the npm metadata
