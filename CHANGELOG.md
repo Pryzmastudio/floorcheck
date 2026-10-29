@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.0
+
+- GitHub Action: `uses: Pryzmastudio/floorcheck@v1` scans your pages, writes a job summary, adds annotations and leaves a SARIF file
+- `--sarif FILE` writes SARIF 2.1.0 for GitHub code scanning and other tools. Failures that `--project` places at a file and line become alerts on that line
+
 ## 1.2.1
 
 - A reCAPTCHA, Turnstile or similar widget no longer marks an ordinary page as a bot challenge. These widgets often sit in contact and signup forms, so they now count only on a page with little text and almost no links. Full-page challenge markup still counts on its own

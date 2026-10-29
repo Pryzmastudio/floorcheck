@@ -23,3 +23,20 @@ jobs:
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
       - run: npm test
+
+  action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./
+        id: floorcheck
+        with:
+          urls: file://${{ github.workspace }}/test/fixtures/negative-control.html
+          project: test/fixtures
+          fail-on: none
+      - run: node scripts/check-action-output.mjs
+        env:
+          SARIF: ${{ steps.floorcheck.outputs.sarif-file }}
+          FAILURES: ${{ steps.floorcheck.outputs.failures }}
+          REPORT_DIR: ${{ steps.floorcheck.outputs.report-dir }}
+

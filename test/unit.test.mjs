@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { parseTags } from '../src/axe.mjs';
 import { classifyPage } from '../src/page-guard.mjs';
+import { toSarif } from '../src/sarif.mjs';
+import { splitArgs } from '../action/run.mjs';
 import { bucketOf, failsAt, summarize } from '../src/report.mjs';
 import { dedupe } from '../src/scan.mjs';
 import { parseSitemap } from '../src/sitemap.mjs';
@@ -96,4 +98,43 @@ test('dedupe merges the same element seen at two viewports', () => {
   assert.equal(out.length, 1);
   assert.deepEqual(out[0].viewports, ['1280x800', '320x512']);
   assert.equal('viewport' in out[0], false);
+});
+
+test('toSarif keeps only failures placed in the source and merges the same element across pages', () => {
+  const finding = (over) => ({
+    id: 'image-alt', bucket: 'violation', class: 'report', sc: '1.1.1', level: 'A', impact: 'critical',
+    selector: 'img.logo', message: 'Images must have alternative text.', helpUrl: 'https://example.com/help',
+    sourceLocation: { file: 'src/Logo.jsx', line: 12, confidence: 'high' }, ...over,
+  });
+  const report = {
+    manifest: { version: '9.9.9' },
+    results: [
+      { ok: true, url: 'https://a.test/', findings: [finding(), finding({ id: 'link-name', sourceLocation: null }), finding({ bucket: 'incomplete', class: 'flag', id: 'color-contrast' })] },
+      { ok: true, url: 'https://a.test/about', findings: [finding()] },
+      { ok: false, url: 'https://a.test/down', error: 'HTTP 503' },
+    ],
+  };
+  const sarif = toSarif(report, { projectRoot: '/repo/app', cwd: '/repo' });
+  const run = sarif.runs[0];
+  assert.equal(sarif.version, '2.1.0');
+  assert.equal(run.tool.driver.version, '9.9.9');
+  assert.equal(run.invocations[0].executionSuccessful, false);
+  assert.equal(run.results.length, 2);
+  const [alt, contrast] = run.results;
+  assert.equal(alt.level, 'error');
+  assert.equal(alt.locations[0].physicalLocation.artifactLocation.uri, 'app/src/Logo.jsx');
+  assert.equal(alt.locations[0].physicalLocation.region.startLine, 12);
+  assert.deepEqual(alt.properties.pages, ['https://a.test/', 'https://a.test/about']);
+  assert.ok(alt.partialFingerprints['floorcheck/v1']);
+  assert.equal(contrast.level, 'note');
+  for (const r of run.tool.driver.rules) {
+    for (const k of ['shortDescription', 'fullDescription', 'help']) assert.ok(r[k].text, `${r.id} ${k}`);
+  }
+});
+
+test('splitArgs keeps quoted values together', () => {
+  assert.deepEqual(splitArgs('--mode full --exclude "#chat widget" --header \'Cookie: a=1\''),
+    ['--mode', 'full', '--exclude', '#chat widget', '--header', 'Cookie: a=1']);
+  assert.deepEqual(splitArgs(''), []);
+  assert.deepEqual(splitArgs('--wait-for ""'), ['--wait-for', '']);
 });

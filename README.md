@@ -122,29 +122,64 @@ Exit codes are built for pipelines:
 
 `--fail-on serious` lets minor and moderate failures through while you work on the rest. Needs-review items never fail a run.
 
-GitHub Actions, scanning a preview URL:
+### GitHub Action
+
+The action scans your pages, writes a summary on the run page, adds up to ten annotations, and leaves a SARIF file. Upload the SARIF and failures that floorcheck can place in your source show up as code scanning alerts on the right line, in pull requests and in the Security tab.
 
 ```yaml
 name: Accessibility
 on: [pull_request]
 
+permissions:
+  contents: read
+  security-events: write   # for the SARIF upload
+
 jobs:
   floorcheck:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@v7
+      # Build and serve the site, or skip this and scan a preview URL instead.
+      - run: npm ci && npm run build
+      - run: npx -y serve@14 -l 4173 dist &
+      - run: npx -y wait-on@8 http://localhost:4173
+
+      - uses: Pryzmastudio/floorcheck@v1
         with:
-          node-version: 24
-      - name: Scan
-        run: npx -y floorcheck https://staging.example.com --fail-on serious
-      - uses: actions/upload-artifact@v7
+          urls: http://localhost:4173/ http://localhost:4173/contact
+          project: .            # where the source is, for file:line
+          fail-on: serious
+      - uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
-          name: floorcheck-report
-          path: floorcheck-report/
+          sarif_file: floorcheck.sarif
 ```
 
-GitHub's Ubuntu runners already have Chrome, so there's nothing else to install.
+| Input | Default | |
+|---|---|---|
+| `urls` | | pages to scan, separated by spaces, commas or new lines |
+| `sitemap` | | a sitemap or sitemap index to read pages from |
+| `max-pages` | `50` | most pages to take from the sitemap |
+| `project` | `.` | source folder for file:line; empty to skip |
+| `fail-on` | `minor` | lowest impact that fails the step, or `none` |
+| `locale` | `en` | language of the axe messages |
+| `sarif-file` | `floorcheck.sarif` | where the SARIF goes |
+| `report-dir` | `floorcheck-report` | where `findings.md`, `findings.json` and `summary.md` go |
+| `args` | | any other options, e.g. `--mode full --exclude "#chat"` |
+
+Outputs: `failures`, `not-scanned`, `sarif-file`, `report-dir`. A page that could not be scanned always fails the step.
+
+Only failures with a source location become SARIF results, because code scanning can't show an alert without a file and line. Everything else is in the summary and in `findings.md`. Code scanning is free on public repositories; on private ones it needs GitHub Advanced Security, and the summary and annotations work either way.
+
+GitHub's runners already have Chrome, so there's nothing else to install.
+
+### Any other CI
+
+```yaml
+- run: npx -y floorcheck https://staging.example.com --fail-on serious --sarif floorcheck.sarif
+```
+
+GitLab, Azure DevOps and most code review tools can read the SARIF file too.
 
 ## Output
 
@@ -152,6 +187,7 @@ Each run writes two files to `./floorcheck-report/` (change it with `--out`, ski
 
 - `findings.md` is for people. One entry per rule rather than per element, so a hundred contrast failures don't bury everything else. Each entry has the WCAG criterion, the EN 301 549 clause where there is one, the viewports it showed up at, and up to ten example elements.
 - `findings.json` is the full record: every element, its selector, XPath and HTML, plus the run manifest with versions and settings.
+- With `--sarif FILE`, a SARIF 2.1.0 file for code scanning tools. It holds the failures that `--project` could place at a file and line.
 
 The folder gets its own `.gitignore`, so reports don't end up in your commits by accident.
 
@@ -185,6 +221,7 @@ Output
   --out DIR              report folder (default ./floorcheck-report)
   --no-report            do not write report files
   --json                 print the full JSON report to stdout
+  --sarif FILE           also write SARIF 2.1.0 (failures placed at file:line by --project)
   --advisory             list best-practice and AAA findings as well
   --fail-on LEVEL        critical, serious, moderate, minor (default) or none
   --project DIR          map findings to source files and run jsx-a11y

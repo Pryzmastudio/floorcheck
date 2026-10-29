@@ -1,0 +1,79 @@
+name: floorcheck WCAG scan
+description: Scan pages for WCAG 2.2 A/AA failures with axe-core plus a 320px reflow check, and point failures at your source for code scanning.
+author: Vayle
+branding:
+  icon: check-square
+  color: blue
+
+inputs:
+  urls:
+    description: Pages to scan, separated by spaces, commas or new lines.
+    required: false
+    default: ''
+  sitemap:
+    description: A sitemap or sitemap index URL to read pages from.
+    required: false
+    default: ''
+  max-pages:
+    description: Most pages to take from the sitemap.
+    required: false
+    default: '50'
+  project:
+    description: Path to the source that renders the pages. Failures are placed at file:line from it, and only those reach the SARIF file. Empty to skip.
+    required: false
+    default: '.'
+  fail-on:
+    description: Lowest impact that fails the step (critical, serious, moderate, minor, none). A page that could not be scanned always fails it.
+    required: false
+    default: minor
+  locale:
+    description: Language of the axe messages, e.g. en, pl, de.
+    required: false
+    default: en
+  sarif-file:
+    description: Where to write the SARIF file for github/codeql-action/upload-sarif.
+    required: false
+    default: floorcheck.sarif
+  report-dir:
+    description: Where findings.md, findings.json and summary.md go.
+    required: false
+    default: floorcheck-report
+  args:
+    description: Any other floorcheck options, e.g. --mode full --exclude "#chat".
+    required: false
+    default: ''
+
+outputs:
+  failures:
+    description: Number of WCAG A/AA failures.
+    value: ${{ steps.scan.outputs.failures }}
+  not-scanned:
+    description: Number of pages that could not be scanned.
+    value: ${{ steps.scan.outputs.not-scanned }}
+  sarif-file:
+    description: Path of the SARIF file.
+    value: ${{ steps.scan.outputs.sarif-file }}
+  report-dir:
+    description: Path of the report folder.
+    value: ${{ steps.scan.outputs.report-dir }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install floorcheck
+      shell: bash
+      run: cd "$GITHUB_ACTION_PATH" && npm ci --omit=dev --no-audit --no-fund --loglevel=error
+    - name: Scan
+      id: scan
+      shell: bash
+      run: node "$GITHUB_ACTION_PATH/action/run.mjs"
+      env:
+        FC_URLS: ${{ inputs.urls }}
+        FC_SITEMAP: ${{ inputs.sitemap }}
+        FC_MAX_PAGES: ${{ inputs.max-pages }}
+        FC_PROJECT: ${{ inputs.project }}
+        FC_FAIL_ON: ${{ inputs.fail-on }}
+        FC_LOCALE: ${{ inputs.locale }}
+        FC_SARIF: ${{ inputs.sarif-file }}
+        FC_REPORT_DIR: ${{ inputs.report-dir }}
+        FC_ARGS: ${{ inputs.args }}

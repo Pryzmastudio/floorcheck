@@ -4,6 +4,7 @@ import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { BootstrapError } from '../src/browser.mjs';
 import { emitJson, emitMarkdown, FAIL_ON, pageLine, summarize } from '../src/report.mjs';
+import { toSarif } from '../src/sarif.mjs';
 import { packageVersion, scan } from '../src/scan.mjs';
 import { selfTest } from '../src/self-test.mjs';
 import { urlsFromSitemap } from '../src/sitemap.mjs';
@@ -40,6 +41,8 @@ Output
   --out DIR              where findings.md and findings.json go (default ./floorcheck-report)
   --no-report            do not write report files
   --json                 print the full JSON report to stdout
+  --sarif FILE           also write SARIF 2.1.0 for GitHub code scanning. Only failures that
+                         --project can place at a file and line go in
   --advisory             list best-practice and AAA findings as well
   --fail-on LEVEL        lowest impact that fails the run: critical, serious, moderate,
                          minor (default) or none
@@ -120,6 +123,7 @@ async function main() {
         out: { type: 'string', short: 'o' },
         'no-report': { type: 'boolean' },
         json: { type: 'boolean' },
+        sarif: { type: 'string' },
         advisory: { type: 'boolean' },
         'fail-on': { type: 'string' },
         project: { type: 'string' },
@@ -215,6 +219,13 @@ async function main() {
     process.stderr.write(`report: ${rel.startsWith('..') ? md : rel}\n`);
   }
   if (o.json) process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+  if (o.sarif) {
+    const sarif = toSarif(report, { projectRoot: o.project ? path.resolve(o.project) : null });
+    await writeFile(path.resolve(o.sarif), `${JSON.stringify(sarif, null, 2)}\n`);
+    const n = sarif.runs[0].results.length;
+    process.stderr.write(`sarif: ${o.sarif} (${n} result${n === 1 ? '' : 's'} placed in your source`
+      + `${o.project ? '' : '; add --project so failures can point at file:line'})\n`);
+  }
 
   if (sum.notScanned) {
     process.stderr.write(`\n${sum.notScanned} page(s) were not scanned. That is not a pass.\n`);
