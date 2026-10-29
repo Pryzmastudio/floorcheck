@@ -1,5 +1,5 @@
 name: floorcheck WCAG scan
-description: Scan pages for WCAG 2.2 A/AA failures with axe-core plus a 320px reflow check, and point failures at your source for code scanning.
+description: WCAG 2.2 A/AA scan with axe-core and a 320px reflow check. Points failures at file:line for code scanning.
 author: Vayle
 branding:
   icon: check-square
