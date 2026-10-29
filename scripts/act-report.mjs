@@ -86,19 +86,23 @@ const outcomeFor = (res, ruleId) => {
 
 async function runCase(tc) {
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  // A test case that never settles must not stall the whole run: closing the
+  // context makes every pending call fail, and the case is reported untested.
+  const watchdog = setTimeout(() => {
+    process.stderr.write(`  timeout ${tc.ruleId} ${tc.testcaseId}\n`);
+    context.close().catch(() => {});
+  }, 60000);
   await injectAxe(context, engine.axePath);
   const page = await context.newPage();
-  // Some test cases redirect themselves (meta refresh). Keep the page that was
-  // asked for: block any later top-level navigation.
+  // Some test cases redirect themselves (meta refresh). A real browser would
+  // leave, so holding it on the page would test something no user ever sees.
+  // Such cases are left untested instead of getting an invented result.
   let navigations = 0;
-  await page.route('**/*', (route) => {
-    const req = route.request();
-    if (req.isNavigationRequest() && req.frame() === page.mainFrame() && navigations++ > 0) return route.abort();
-    return route.continue();
-  });
+  page.on('framenavigated', (frame) => { if (frame === page.mainFrame()) navigations++; });
   try {
     await page.goto(tc.url, { waitUntil: 'load', timeout: 30000 });
     await page.waitForTimeout(250);
+    if (navigations > 1 || page.url() !== tc.url) throw new Error('the page redirected itself');
 
     // Plain XML is not a web page: none of the HTML rules apply to it.
     const contentType = await page.evaluate(() => document.contentType);
@@ -144,7 +148,8 @@ async function runCase(tc) {
     untested++;
     process.stderr.write(`  untested ${tc.ruleId} ${tc.testcaseId}: ${String(err.message).split('\n')[0]}\n`);
   } finally {
-    await context.close();
+    clearTimeout(watchdog);
+    await context.close().catch(() => {});
   }
 }
 

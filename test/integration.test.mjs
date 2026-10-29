@@ -45,6 +45,10 @@ before(async () => {
         return send(200, page('Wide', `<a class="skip" href="#m" style="position:absolute;left:-9999px">Skip</a>`
           + `<span style="position:absolute;width:1px;height:1px;clip:rect(0 0 0 0);overflow:hidden">sr only</span>`
           + `<div id="wide" style="width:900px">Too wide</div>${filler}`));
+      case '/reflow-pre':
+        return send(200, page('Code', `<h1>Code</h1>${filler}<pre>const aVeryLongLineOfCodeThatCannotWrap = someFunction(withArguments, andMoreArguments, andEvenMore);</pre>`));
+      case '/reflow-box':
+        return send(200, page('Box', `<h1>Box</h1>${filler}<div style="overflow-x:auto"><p style="min-width:600px">This paragraph only fits if you scroll sideways inside the box.</p></div>`));
       case '/forbidden':
         return send(403, page('403 Forbidden', '<h1>Forbidden</h1>'));
       case '/challenge':
@@ -116,6 +120,22 @@ test('reflow blames the wide element, not off-screen skip links', async () => {
   assert.ok(reflow.length > 0, 'the page scrolls sideways at 320px');
   assert.ok(reflow.some((f) => /#wide/.test(f.selector)));
   assert.ok(reflow.every((f) => !/skip|span/.test(f.selector || '')), reflow.map((f) => f.selector).join(', '));
+});
+
+test('code that needs two dimensions goes to review, not failure', async () => {
+  const report = await scan([`${base}/reflow-pre`]);
+  const ids = report.results[0].findings.map((f) => f.id);
+  assert.ok(ids.includes('reflow-two-dimensional-content'));
+  assert.ok(!ids.includes('reflow-horizontal-overflow'));
+  const f = report.results[0].findings.find((x) => x.id === 'reflow-two-dimensional-content');
+  assert.equal(f.class, 'flag');
+});
+
+test('text scrolling sideways inside a box goes to review', async () => {
+  const report = await scan([`${base}/reflow-box`]);
+  const ids = report.results[0].findings.map((f) => f.id);
+  assert.ok(ids.includes('reflow-scroll-container'));
+  assert.ok(!ids.includes('reflow-horizontal-overflow'), 'the page itself does not scroll');
 });
 
 test('extra headers reach the scanned site only', async () => {

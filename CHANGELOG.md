@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.0
+
+- Reflow: overflow caused only by code, tables, canvas or drawings now goes to needs-review (WCAG 1.4.10 allows two-dimensional scrolling when the layout is essential) instead of failing
+- Reflow: text that scrolls sideways inside its own box is reported for review
+- Reflow: when no element sticks out, the innermost element with a line that spills out is named (a long line in `<pre>`, a long URL)
+
 ## 1.1.0
 
 - `npm run act-report`: runs the W3C ACT Rules test cases and writes an EARL report (`act/floorcheck-earl.json`)

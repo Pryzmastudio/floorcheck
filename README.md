@@ -32,6 +32,8 @@ I build and fix websites, and I kept running into the same problems with automat
 | Check | WCAG | Result |
 |---|---|---|
 | Page scrolls sideways at 320px, with the element that causes it | 1.4.10 Reflow (AA) | failure |
+| Sideways scrolling caused only by code, a table, a canvas or a drawing, which WCAG allows when the layout is essential | 1.4.10 Reflow (AA) | needs review |
+| Text that scrolls sideways inside its own box at 320px | 1.4.10 Reflow (AA) | needs review |
 | Focusable element with no visible change on focus (`--mode full`) | 2.4.7 Focus Visible (AA) | needs review |
 | Positive `tabindex` changing the focus order (`--mode full`) | 2.4.3 Focus Order (A) | needs review |
 | Animation that loops forever with no `prefers-reduced-motion` rule | 2.2.2 Pause, Stop, Hide (A) | needs review |

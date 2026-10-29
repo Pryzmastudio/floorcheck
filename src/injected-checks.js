@@ -56,12 +56,41 @@
 
   /* 1.4.10 Reflow. At a narrow viewport the document must not scroll
    * sideways. Only the outermost overflowing elements are reported, so one wide
-   * container does not drag its whole subtree into the report. */
+   * container does not drag its whole subtree into the report.
+   *
+   * WCAG allows two-dimensional scrolling where the layout is essential: code,
+   * data tables, drawings, maps, games. A script cannot tell whether it is
+   * essential, so overflow caused only by that kind of content, and text that
+   * scrolls sideways inside its own box, go to needs-review instead. */
+  var TWO_D = 'pre, code, samp, table, canvas, svg, math, [role="grid"], [role="treegrid"], [role="application"]';
+
+  function twoDimensional(el) {
+    try { return !!el.closest(TWO_D); } catch (e) { return false; }
+  }
+
+  function visuallyHidden(cs, r) {
+    return (r.width <= 1 && r.height <= 1)
+      || cs.clip === 'rect(0px, 0px, 0px, 0px)'
+      || /inset\(50%\)/.test(cs.clipPath);
+  }
+
+  function reflowNode(o, vw) {
+    return {
+      selector: cssPath(o.el),
+      html: snippet(o.el),
+      note: 'right edge ' + o.right + 'px, width ' + o.width + 'px, viewport ' + vw + 'px',
+    };
+  }
+
   function checkReflow() {
+    var out = [];
     var docEl = document.scrollingElement || document.documentElement;
     var vw = window.innerWidth;
     var overflow = docEl.scrollWidth - vw;
-    if (overflow <= 2) return [];
+    // Only content past the trailing edge creates a scrollbar. Things parked
+    // off the leading edge (skip links, screen-reader-only text) do not.
+    var rtl = getComputedStyle(document.documentElement).direction === 'rtl';
+    var all = document.body ? document.body.querySelectorAll('*') : [];
 
     function clippedByAncestor(el) {
       var node = el.parentElement;
@@ -72,55 +101,118 @@
       return false;
     }
 
-    // Only content past the trailing edge creates a scrollbar. Things parked
-    // off the leading edge (skip links, screen-reader-only text) do not.
-    var rtl = getComputedStyle(document.documentElement).direction === 'rtl';
+    if (overflow > 2) {
+      var offenders = [];
+      for (var i = 0; i < all.length; i++) {
+        var el = all[i];
+        var cs = getComputedStyle(el);
+        if (cs.position === 'fixed') continue;
+        if (!isVisible(el, cs)) continue;
+        var r = el.getBoundingClientRect();
+        if (rtl ? r.left >= -2 : r.right <= vw + 2) continue;
+        if (visuallyHidden(cs, r)) continue;
+        if (clippedByAncestor(el)) continue;
+        offenders.push({ el: el, right: Math.round(r.right), width: Math.round(r.width) });
+      }
+      var outermost = offenders.filter(function (o) {
+        return !offenders.some(function (p) { return p.el !== o.el && p.el.contains(o.el); });
+      });
+      // Nothing sticks out as a box: the overflow is text spilling out of an
+      // element that is itself narrow enough (a long line in <pre>, a long URL).
+      if (!outermost.length) {
+        var spillers = [];
+        for (var s2 = 0; s2 < all.length; s2++) {
+          var sp = all[s2];
+          var scs = getComputedStyle(sp);
+          if (scs.overflowX !== 'visible' || sp.scrollWidth <= sp.clientWidth + 2) continue;
+          if (!isVisible(sp, scs) || clippedByAncestor(sp)) continue;
+          var sr = sp.getBoundingClientRect();
+          if (!rtl && sr.left + sp.scrollWidth <= vw + 2) continue;
+          spillers.push({ el: sp, right: Math.round(sr.left + sp.scrollWidth), width: sp.scrollWidth });
+        }
+        // Every ancestor of the real culprit also "spills", so blame the
+        // innermost one: that is where the long line actually is.
+        outermost = spillers.filter(function (o) {
+          return !spillers.some(function (p) { return p.el !== o.el && o.el.contains(p.el); });
+        });
+      }
+      // If every offender sits inside an excluded region, the overflow is theirs.
+      var counted = outermost.filter(function (o) { return !isExcluded(o.el); });
+      var plain = counted.filter(function (o) { return !twoDimensional(o.el); });
+      var twoD = counted.filter(function (o) { return twoDimensional(o.el); });
 
-    function visuallyHidden(cs, r) {
-      return (r.width <= 1 && r.height <= 1)
-        || cs.clip === 'rect(0px, 0px, 0px, 0px)'
-        || /inset\(50%\)/.test(cs.clipPath);
+      if (plain.length || !outermost.length) {
+        out.push({
+          id: 'reflow-horizontal-overflow',
+          cls: 'report',
+          sc: '1.4.10',
+          level: 'AA',
+          wcagVersion: '2.1',
+          impact: 'serious',
+          helpUrl: 'https://www.w3.org/WAI/WCAG22/Understanding/reflow.html',
+          message: 'Page scrolls sideways at ' + vw + 'px wide (content is ' + overflow + 'px too wide).',
+          detail: 'WCAG 1.4.10 Reflow: content must work at 320 CSS px wide without scrolling in two directions. '
+            + (plain.length ? 'The outermost overflowing elements are listed.' : 'No single element could be blamed; check the layout container.'),
+          nodes: plain.slice(0, 12).map(function (o) { return reflowNode(o, vw); }),
+        });
+      }
+      if (twoD.length) {
+        out.push({
+          id: 'reflow-two-dimensional-content',
+          cls: 'flag',
+          sc: '1.4.10',
+          level: 'AA',
+          wcagVersion: '2.1',
+          impact: 'moderate',
+          helpUrl: 'https://www.w3.org/WAI/WCAG22/Understanding/reflow.html',
+          message: 'Page scrolls sideways at ' + vw + 'px wide because of code, a table, a canvas or a drawing.',
+          detail: 'WCAG 1.4.10 allows two-dimensional scrolling when the layout is essential for meaning or use. '
+            + 'Check whether this content really needs it. Prose inside <pre> or a layout table usually does not.',
+          nodes: twoD.slice(0, 12).map(function (o) { return reflowNode(o, vw); }),
+        });
+      }
     }
 
-    var offenders = [];
-    var all = document.body ? document.body.querySelectorAll('*') : [];
-    for (var i = 0; i < all.length; i++) {
-      var el = all[i];
-      var cs = getComputedStyle(el);
-      if (cs.position === 'fixed') continue;
-      if (!isVisible(el, cs)) continue;
-      var r = el.getBoundingClientRect();
-      if (rtl ? r.left >= -2 : r.right <= vw + 2) continue;
-      if (visuallyHidden(cs, r)) continue;
-      if (clippedByAncestor(el)) continue;
-      offenders.push({ el: el, right: Math.round(r.right), width: Math.round(r.width) });
+    // Text that scrolls sideways inside its own box.
+    var scrollers = [];
+    for (var j = 0; j < all.length; j++) {
+      var box = all[j];
+      var bcs = getComputedStyle(box);
+      if (!/(auto|scroll)/.test(bcs.overflowX)) continue;
+      if (box.scrollWidth <= box.clientWidth + 2) continue;
+      if (!isVisible(box, bcs) || isExcluded(box) || twoDimensional(box)) continue;
+      if (!(box.innerText || '').trim()) continue;
+      var edge = box.getBoundingClientRect();
+      var inner = box.querySelectorAll('*');
+      var textOverflows = false;
+      for (var k = 0; k < inner.length && !textOverflows; k++) {
+        var ir = inner[k].getBoundingClientRect();
+        var past = rtl ? ir.left < edge.left - 2 : ir.right > edge.right + 2;
+        if (past && !twoDimensional(inner[k]) && (inner[k].innerText || '').trim()) textOverflows = true;
+      }
+      if (textOverflows) scrollers.push(box);
     }
-    var outermost = offenders.filter(function (o) {
-      return !offenders.some(function (p) { return p.el !== o.el && p.el.contains(o.el); });
+    var outerScrollers = scrollers.filter(function (b) {
+      return !scrollers.some(function (p) { return p !== b && p.contains(b); });
     });
-    // If every offender sits inside an excluded region, the overflow is theirs.
-    var counted = outermost.filter(function (o) { return !isExcluded(o.el); });
-    if (outermost.length && !counted.length) return [];
-
-    return [{
-      id: 'reflow-horizontal-overflow',
-      cls: 'report',
-      sc: '1.4.10',
-      level: 'AA',
-      wcagVersion: '2.1',
-      impact: 'serious',
-      helpUrl: 'https://www.w3.org/WAI/WCAG22/Understanding/reflow.html',
-      message: 'Page scrolls sideways at ' + vw + 'px wide (content is ' + overflow + 'px too wide).',
-      detail: 'WCAG 1.4.10 Reflow: content must work at 320 CSS px wide without scrolling in two directions. '
-        + (counted.length ? 'The outermost overflowing elements are listed.' : 'No single element could be blamed; check the layout container.'),
-      nodes: counted.slice(0, 12).map(function (o) {
-        return {
-          selector: cssPath(o.el),
-          html: snippet(o.el),
-          note: 'right edge ' + o.right + 'px, width ' + o.width + 'px, viewport ' + vw + 'px',
-        };
-      }),
-    }];
+    if (outerScrollers.length) {
+      out.push({
+        id: 'reflow-scroll-container',
+        cls: 'flag',
+        sc: '1.4.10',
+        level: 'AA',
+        wcagVersion: '2.1',
+        impact: 'moderate',
+        helpUrl: 'https://www.w3.org/WAI/WCAG22/Understanding/reflow.html',
+        message: outerScrollers.length + ' box(es) with text scroll sideways at ' + vw + 'px wide.',
+        detail: 'Sideways scrolling inside a box can be fine for a row of cards or a data table, but text people need '
+          + 'to read, or the main navigation, should wrap instead.',
+        nodes: outerScrollers.slice(0, 12).map(function (b) {
+          return { selector: cssPath(b), html: snippet(b), note: 'scrolls ' + (b.scrollWidth - b.clientWidth) + 'px sideways' };
+        }),
+      });
+    }
+    return out;
   }
 
   /* 2.2.2 Pause, Stop, Hide. axe only knows <blink> and <marquee>. What the
